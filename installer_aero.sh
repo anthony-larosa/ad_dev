@@ -38,11 +38,11 @@ while [ $? -ne 0 ]; do
 	passwd $user_var
 done
 
-for GROUP in $(groups pi | sed 's/.*:\spi//'); do adduser "$user_var"; done
+for GROUP in $(groups pi | sed 's/.*:\spi//'); do adduser "$user_var" $GROUP; done
 
 sleep 2
-grep '^sudo' /etc/group | grep $user_var &> /dev/null
-if [ $ == 0 ]; then
+getent group sudo | grep -q "$user_var"
+if [ $? -eq 0 ]; then
 	echo "$user_var has root privileges, continuing..."
 else
 	echo "Adding using to root failed...Try a new username?" 1>&2
@@ -70,7 +70,9 @@ cronjob4="0 */1 * * * /home/$ser_var/ad_dev/conn_dog.sh"
 (crontab -u $user_var -l; echo "$cronjob3" ) | crontab -u $user_var -
 (crontab -u $user_var -l; echo "$cronjob4" ) | crontab -u $user_var -
 
+cp -r $PWD /home/$user_var
 cd /home/$user_var/ad_dev/v5_cimel_connect
+echo "Compiling cimel connect..."
 cc -g -o multi_https_connect multi_connect.c my_com_port.c aero_time.c -lm -L /usr/lib/arm-linux-gnueabihf/ -lcurl
 
 
