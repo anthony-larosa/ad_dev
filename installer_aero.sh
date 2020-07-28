@@ -70,6 +70,7 @@ cronjob4="0 */1 * * * /home/$ser_var/ad_dev/conn_dog.sh"
 (crontab -u $user_var -l; echo "$cronjob3" ) | crontab -u $user_var -
 (crontab -u $user_var -l; echo "$cronjob4" ) | crontab -u $user_var -
 
+mkdir /home/$user_var/logs
 cp -r $PWD /home/$user_var
 cd /home/$user_var/ad_dev/v5_cimel_connect
 echo "Compiling cimel connect..."
