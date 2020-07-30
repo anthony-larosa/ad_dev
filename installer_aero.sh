@@ -63,7 +63,7 @@ fi
 cronjob1="@reboot sleep 300 && /home/$user_var/ad_dev/cimel_start.sh"
 cronjob2="57 23 */2 * * /home/$user_var/ad_dev/status.sh"
 cronjob3="0 */3 * * * /home/$user_var/ad_dev/modem_dog.sh"
-cronjob4="0 */1 * * * /home/$ser_var/ad_dev/conn_dog.sh"
+cronjob4="0 */1 * * * /home/$user_var/ad_dev/conn_dog.sh"
 
 (crontab -u $user_var -l; echo "$cronjob1" ) | crontab -u $user_var -
 (crontab -u $user_var -l; echo "$cronjob2" ) | crontab -u $user_var -
