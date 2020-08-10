@@ -46,6 +46,7 @@ if [ $? -eq 0 ]; then
 	echo "$user_var has root privileges, continuing..."
 else
 	echo "Adding using to root failed...Try a new username?" 1>&2
+	userdel -r "$user_var"
 	exit 1
 fi
 
