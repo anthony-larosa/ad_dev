@@ -73,6 +73,11 @@ cronjob4="0 */1 * * * /home/$user_var/ad_dev/conn_dog.sh"
 
 mkdir /home/$user_var/logs
 cp -r $PWD /home/$user_var
+mv /home/$user_var/ad_dev/holoConn.service /etc/systemd/system/
+sleep 1
+echo "Enabling services..."
+sleep 1
+systemctl enable holoconn.service
 cd /home/$user_var/ad_dev/v5_cimel_connect
 echo "Compiling cimel connect..."
 cc -g -o multi_https_connect multi_connect.c my_com_port.c aero_time.c -lm -L /usr/lib/arm-linux-gnueabihf/ -lcurl
