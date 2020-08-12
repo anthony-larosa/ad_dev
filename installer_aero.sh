@@ -64,12 +64,12 @@ fi
 cronjob1="@reboot sleep 300 && /home/$user_var/ad_dev/v5_cimel_connect/multi_https_connect USB0"
 cronjob2="57 23 */2 * * /home/$user_var/ad_dev/status.sh"
 cronjob3="0 */3 * * * /home/$user_var/ad_dev/modem_dog.sh"
-cronjob4="0 */1 * * * /home/$user_var/ad_dev/conn_dog.sh"
+
 
 (crontab -u $user_var -l; echo "$cronjob1" ) | crontab -u $user_var -
 (crontab -u $user_var -l; echo "$cronjob2" ) | crontab -u $user_var -
 (crontab -u $user_var -l; echo "$cronjob3" ) | crontab -u $user_var -
-(crontab -u $user_var -l; echo "$cronjob4" ) | crontab -u $user_var -
+
 
 mkdir /home/$user_var/logs
 cp -r $PWD /home/$user_var
