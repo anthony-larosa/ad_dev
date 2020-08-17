@@ -77,7 +77,7 @@ mv /home/$user_var/ad_dev/holoConn.service /etc/systemd/system/
 sleep 1
 echo "Enabling services..."
 sleep 1
-systemctl enable holoconn.service
+systemctl enable holoConn.service
 cd /home/$user_var/ad_dev/v5_cimel_connect
 echo "Compiling cimel connect..."
 cc -g -o multi_https_connect multi_connect.c my_com_port.c aero_time.c -lm -L /usr/lib/arm-linux-gnueabihf/ -lcurl

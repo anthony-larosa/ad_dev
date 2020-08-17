@@ -2,6 +2,15 @@
 
 now=$(date)
 
+getscript() {
+  pgrep -lf ".[ /]$1( |\$)"
+}
+if getscript "multi_https_connect" >/dev/null; then
+	echo "Cimel connect is running at ${now} >> $HOME/logs/connection.log
+else
+	echo "Cimel connect is not running at ${now} >> $HOME/logs/connection.log
+fi
+
 is_ppp=0
 text=`sudo ifconfig | grep ppp0`
 if [ -n "$text" ]; then
