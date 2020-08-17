@@ -61,7 +61,7 @@ else
 	echo "ExecStart=-/sbin/agetty --autologin "$user_var" --noclear %I $TERM" >> $autologinf
 fi
 
-cronjob1="@reboot sleep 300 && /home/$user_var/ad_dev/v5_cimel_connect/multi_https_connect USB0"
+cronjob1="@reboot sleep 300 && /home/$user_var/ad_dev/v5_cimel_connect/model5_connect_silent USB0"
 cronjob2="57 23 */2 * * /home/$user_var/ad_dev/status.sh"
 cronjob3="0 */3 * * * /home/$user_var/ad_dev/modem_dog.sh"
 
