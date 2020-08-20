@@ -18,17 +18,8 @@ else
 	echo "libcurl is installed, continuing with script."
 fi
 
-echo "Installing git..."
-
-apt install -y git
-if [[ $> 0 ]]
-then
-	echo "git failed to install, exiting."
-else
-	echo "git is installed, continuing with script."
-fi
-
-read -p "Enter a new username:" user_var
+#Create new user via I/O
+read -p "Enter a new username:" user_var # Save username as var user_var
 echo "The current username is:" "$user_var"
 
 adduser --force-badname "$user_var" --gecos "" --disabled-password

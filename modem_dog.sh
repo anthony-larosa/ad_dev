@@ -6,9 +6,9 @@ getscript() {
   pgrep -lf ".[ /]$1( |\$)"
 }
 if getscript "model5_connect_silent" >/dev/null; then
-	echo "Model 5 connect is running at ${now} >> $HOME/logs/connection.log
+	echo "Model 5 connect is running at ${now}" >> $HOME/logs/connection.log
 else
-	echo "Model 5 connect is not running at ${now} >> $HOME/logs/connection.log
+	echo "Model 5 connect is not running at ${now}" >> $HOME/logs/connection.log
 fi
 
 is_ppp=0
