@@ -62,7 +62,7 @@ cronjob3="0 */3 * * * /home/$user_var/ad_dev/modem_dog.sh"
 
 
 mkdir /home/$user_var/logs #Make a log file directory
-
+mkdir /home/$user_var/backup #For data files saved to disk
 cp -r $PWD /home/$user_var #Copy the programs from current user to new user
 
 mv /home/$user_var/ad_dev/holoConn.service /etc/systemd/system/
