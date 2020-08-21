@@ -74,7 +74,7 @@ sleep 1
 
 cd /home/$user_var/ad_dev/v5_cimel_connect
 echo "Compiling cimel connect..."
-cc -g -o multi_https_connect multi_connect.c my_com_port.c aero_time.c -lm -L /usr/lib/arm-linux-gnueabihf/ -lcurl
+cc -o model5_connect_silent model5_connect_silent.c model5_port.c -lm -lcurl
 
 
 sleep 2
