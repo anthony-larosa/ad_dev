@@ -56,7 +56,7 @@ cronjob1="@reboot sleep 300 && /home/$user_var/ad_dev/v5_cimel_connect/model5_co
 cronjob2="57 23 */2 * * /home/$user_var/ad_dev/status.sh"
 cronjob3="0 */3 * * * /home/$user_var/ad_dev/modem_dog.sh"
 
-{ crontab -l -u $user_var; echo "$cronjob1"; } | crontab -u $user_var -
+{ crontab -l -u $user_var 2>/dev/null; echo "$cronjob1"; } | crontab -u $user_var -
 { crontab -l -u $user_var; echo "$cronjob2"; } | crontab -u $user_var -
 { crontab -l -u $user_var; echo "$cronjob3"; } | crontab -u $user_var -
 
@@ -70,12 +70,16 @@ mv /home/$user_var/ad_dev/holoConn.service /etc/systemd/system/
 sleep 1
 echo "Enabling services..."
 sleep 1
-
+systemctl enable /etc/systemd/system/holoConn.service
 
 cd /home/$user_var/ad_dev/v5_cimel_connect
 echo "Compiling cimel connect..."
 cc -o model5_connect_silent model5_connect_silent.c model5_port.c -lm -lcurl
-
+chown ${user_var}: /home/$user_var/ad_dev/v5_cimel_connect/model5_connect_silent
 
 sleep 2
+echo "==========================="
+sleep 2
+echo "==========================="
 echo "Build complete"
+echo "Please execute a reboot to hard reload daemons and kernel changes"
