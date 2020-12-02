@@ -13,7 +13,7 @@
 #include <curl/curl.h>
 
 
-#define PROG_VERSION "4.0"
+#define PROG_VERSION "4.2"
 
 
 typedef struct
@@ -27,7 +27,7 @@ typedef struct
 {
     time_t aeronet_time;
     char pc_time_string[20];
-    int aero_connect, aero_reconnect, aeronet_time_real;
+    int aeronet_time_real, seconds_shift, status, good_clock;
 } AERO_EXCHANGE;
 
 

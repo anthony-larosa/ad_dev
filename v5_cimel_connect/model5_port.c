@@ -62,7 +62,11 @@ time_t receive_aeronet_time(AERO_EXCHANGE *ptr)
     time_t cr_time;
     struct tm mtim;
 
+    time_t pi_time;
+
     char url_ref[100];
+
+    ptr->status = ptr->good_clock = 0;
 
     cr_time = time(NULL);
     gmtime_r(&cr_time, &mtim);
@@ -77,29 +81,56 @@ time_t receive_aeronet_time(AERO_EXCHANGE *ptr)
 
     if (!curl)
     {
-        ptr->aero_reconnect = ptr->aero_connect = 0;
-
         return 0;
     }
 
     curl_easy_setopt(curl, CURLOPT_URL, url_ref);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, handle_aeronet_time_internally);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, ptr);
 
     res = curl_easy_perform(curl);
 
-    if (res != CURLE_OK)
-    {
-        curl_easy_cleanup(curl);
-        ptr->aero_reconnect = ptr->aero_connect = 0;
-        return 0;
-    }
+    pi_time = time(NULL);
+    printf("System time is %s", ctime(&pi_time));
+
     curl_easy_cleanup(curl);
 
-    if (!ptr->aero_connect)
-        ptr->aero_reconnect = ptr->aero_connect = 1;
+    if (res != CURLE_OK)
+    {
+
+        printf("Code error = %d\nAeronet time cannot be acquired\n", res);
+
+        return 0;
+    }
+
+    if (ptr->aeronet_time_real)
+    {
+        ptr->seconds_shift = ptr->aeronet_time - pi_time;
+        ptr->status = 1;
+        printf("Aeronet time acquired : %sTime shift = %d seconds",
+               ctime(&ptr->aeronet_time), ptr->seconds_shift);
+
+        if (abs(ptr->seconds_shift) < 3) 
+        {
+            ptr->good_clock = 1;
+            printf (" System clock is good");
+        }
+        else
+        {
+            printf (" System clock will not be used to correct Cimel clock");
+        }
+        
+
+    }
+    else
+    {
+        printf("Aeronet time cannot be acquired at the moment, may need to work offline");
+    }
+
+       printf ("\n");
+
     return ptr->aeronet_time;
 }
 
@@ -421,7 +452,7 @@ int check_if_packet_completed(MY_COM_PORT *mcport, AERO_EXCHANGE *aerex)
 {
 
     int header_size, i;
-    time_t aeronet_time;
+    time_t correct_time;
     struct tm mtim;
     char time_correction_string[20];
 
@@ -480,10 +511,13 @@ int check_if_packet_completed(MY_COM_PORT *mcport, AERO_EXCHANGE *aerex)
         if (mcport->time_count == 1)
         {
             mcport->cimel_time = get_cimel_time(mcport->begin + 2, mcport->length_ret - 2);
-            aeronet_time = receive_aeronet_time(aerex);
-            if (aeronet_time)
+
+            if (aerex->status && aerex->good_clock)
+
             {
-                gmtime_r(&aeronet_time, &mtim);
+                correct_time = time(NULL);
+
+                gmtime_r(&correct_time, &mtim);
 
                 sprintf(time_correction_string, "R1234%02d%02d%02d%02d%02d%02dT",
                         mtim.tm_hour, mtim.tm_min,
@@ -590,7 +624,7 @@ int main_loop_cycle(MY_COM_PORT *mcport, AERO_EXCHANGE *aerex, K7_BUFFER *k7_buf
 {
 
     int retval, i, status;
-    time_t new_time, aeronet_time;
+    time_t new_time, correct_time;
     RECORD_BUFFER *ptr;
 
     retval = reading_single_port_with_timeout(mcport);
@@ -627,8 +661,6 @@ perform timeout. if time_interval reached, then action - upload hourle and/or da
         {
             new_time = time(NULL);
 
-          
-
             if (status == 1)
             {
 
@@ -651,22 +683,22 @@ perform timeout. if time_interval reached, then action - upload hourle and/or da
                 sprintf(k7_buffer->header.buffer + 162, "%s", mcport->hostname);
                 sprintf(k7_buffer->header.buffer + 203, "%s", mcport->program_version);
 
-                aeronet_time = receive_aeronet_time(aerex);
+                if (aerex->status && aerex->good_clock)
 
-                if (aeronet_time)
                 {
-                    put_sys_time_to_buffer(&aeronet_time, k7_buffer->header.buffer + 156);
-                    if ((aeronet_time > mcport->cimel_time + 10) || (aeronet_time < mcport->cimel_time - 10))
+                    
+                    correct_time = time(NULL);
+
+                    put_sys_time_to_buffer(&correct_time, k7_buffer->header.buffer + 156);
+                    if ((correct_time > mcport->cimel_time + 10) || (correct_time < mcport->cimel_time - 10))
                     {
                         mcport->time_correction_flag = 1;
                     }
-                    /*
-                    printf("Time difference = %ld", aeronet_time - mcport->cimel_time);
+
+                    printf("Time difference = %ld", correct_time - mcport->cimel_time);
                     if (mcport->time_correction_flag)
                         printf(" Time correction  suggested");
                     printf("\n");
-                    */
-                    
                 }
                 else
                 {
@@ -832,6 +864,7 @@ int libcurl_upload_k7_buffer_to_https(K7_BUFFER *k7b)
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&k7b->up_res);
 
     res = curl_easy_perform(curl);
+
     curl_mime_free(multipart);
 
     curl_easy_cleanup(curl);
@@ -839,7 +872,13 @@ int libcurl_upload_k7_buffer_to_https(K7_BUFFER *k7b)
     free(buffer);
 
     if (res != CURLE_OK)
+    {
+        printf("Code error = %d %sUpload unsuccesful\n", res);
+
         return 0;
+    }
+
+    printf("Upload succesful\n");
 
     return 1;
 }
