@@ -5,7 +5,7 @@ now=$(date)
 getscript() {
   pgrep -lf ".[ /]$1( |\$)"
 }
-if getscript "model5_connect_silent" >/dev/null; then
+if getscript "model5_connect" >/dev/null; then
 	echo "Model 5 connect is running at ${now}" >> $HOME/logs/connection.log
 else
 	echo "Model 5 connect was not running at ${now}." >> $HOME/logs/connection.log
