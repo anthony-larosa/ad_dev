@@ -18,6 +18,16 @@ else
 	echo "libcurl is installed, continuing with script."
 fi
 
+echo "Downloading Hologram SDK..."
+curl -L hologram.io/python-install | bash
+if [[ $> 0 ]]
+then
+	echo "SDK failed installation, re-running"
+	curl -L hologram.io/python-install | bash
+else
+	echo "Sucessfully installed Hologram SDK"
+fi
+
 #Create new user via I/O
 read -p "Enter a new username:" user_var # Save username as var user_var
 echo "The current username is:" "$user_var"
