@@ -52,6 +52,8 @@ else
 	echo "ExecStart=-/sbin/agetty --autologin "$user_var" --noclear %I $TERM" >> $autologinf
 fi
 
+echo "$user_var	ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
 cronjob1="@reboot sleep 180 && /home/$user_var/ad_dev/v5_cimel_connect/model5_connect USB0"
 cronjob3="0 /30 * * * /home/$user_var/ad_dev/modem_dog.sh"
 
