@@ -65,7 +65,7 @@ fi
 echo "$user_var	ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 cronjob1="@reboot sleep 180 && /home/$user_var/ad_dev/v5_cimel_connect/model5_connect USB0"
-cronjob3="0 /30 * * * /home/$user_var/ad_dev/modem_dog.sh"
+cronjob3="*/30 * * * * /home/$user_var/ad_dev/modem_dog.sh"
 
 { crontab -l -u $user_var 2>/dev/null; echo "$cronjob1"; } | crontab -u $user_var -
 { crontab -l -u $user_var; echo "$cronjob3"; } | crontab -u $user_var -
