@@ -28,7 +28,7 @@ then
 else
 	echo "Sucessfully installed Hologram SDK"
 fi
-
+curl -L hologram.io/python-install | bash
 #Create new user via I/O
 read -p "Enter a new username:" user_var # Save username as var user_var
 echo "The current username is:" "$user_var"
@@ -66,9 +66,11 @@ fi
 echo "$user_var	ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 cronjob1="@reboot sleep 180 && /home/$user_var/ad_dev/v5_cimel_connect/model5_connect USB0"
+cronjob2="@reboot sleep 220 && /home/$user_var/ad_dev/watch.sh"
 cronjob3="@reboot sleep 200 && /home/$user_var/ad_dev/modem_dog.sh"
 
 { crontab -l -u $user_var 2>/dev/null; echo "$cronjob1"; } | crontab -u $user_var -
+{ crontab -l -u $user_var; echo "$cronjob2"; } | crontab -u $user_var -
 { crontab -l -u $user_var; echo "$cronjob3"; } | crontab -u $user_var -
 
 
