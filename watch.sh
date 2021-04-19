@@ -9,4 +9,4 @@ else
 	echo "modem_dog is not running, executing..."
 	/home/$USER/ad_dev/modem_dog.sh
 fi
-echo "Checked"
+echo "Checked if modem dog was running or not"
