@@ -5,9 +5,10 @@ counter=0
 getscript() {
   pgrep -lf ".[ /]$1( |\$)"
 }
-while [ $counter -lt 5 ]; do
+while [ $counter -lt 4 ]; do
 	if getscript "model5_connect" >/dev/null; then
 		echo "Model 5 connect is running at ${now}"
+		sleep 30m
 	else
 		echo "Model 5 connect was not running at ${now}." >> $HOME/logs/connection.log
 		counter=$((counter+1))
