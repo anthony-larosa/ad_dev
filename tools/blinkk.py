@@ -11,7 +11,7 @@ i2c = busio.I2C(board.SCL, board.SDA)
 ads = ADS.ADS1115(i2c)
 
 while True:
-	f=open('/home/pi/battery.txt','a')
+	f=open('/home/$USER/tools/battery.txt','a')
 	now = datetime.datetime.now().isoformat()
 	chan = AnalogIn(ads, ADS.P0)
 	bat_volts = chan.voltage * 5.532
