@@ -78,7 +78,7 @@ mkdir /home/$user_var/logs #Make a log file directory
 mkdir /home/$user_var/backup #For data files saved to disk
 cp -r $PWD /home/$user_var #Copy the programs from current user to new user
 chown -R ${user_var}: /home/$user_var/
-chmod 777 /home/$user_var/
+chmod 777 /home/$user_var
 chmod 777 /home/$user_var/backup
 chmod 777 /home/$user_var/logs 
 chmod 777 /home/$user_var/ad_dev/v5_cimel_connect/model5_connect
