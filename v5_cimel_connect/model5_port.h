@@ -13,7 +13,7 @@
 #include <curl/curl.h>
 
 
-#define PROG_VERSION "4.2"
+#define PROG_VERSION "4.3"
 
 
 typedef struct
@@ -57,7 +57,7 @@ typedef struct
     int if_open_port, time_interval;
     size_t length_ret, length_data;
 
-    time_t cimel_time, last_time, check_time;
+    time_t cimel_time, last_time, check_time, previous_time;
 
     unsigned char packet_received[4000], packet_send[20], payload_received[2000], *buf, 
     message_number;
@@ -69,6 +69,8 @@ typedef struct
 		time_correction_flag, time_count, cimel_number;
 } MY_COM_PORT;
 
+
+void define_usb_com_port(char **usb_port);
 
 
 size_t handle_aeronet_time_internally(unsigned char *buffer, size_t size, size_t nmemb, AERO_EXCHANGE *ptr);

@@ -15,6 +15,50 @@
 #include <errno.h>
 #include "model5_port.h"
 
+void define_usb_com_port(char **usb_port)
+{
+    char *sscctt = NULL, buffer[100], full_path[200], *ch;
+    DIR *dfd;
+    struct direct *dp;
+    ssize_t size_dev;
+
+    *usb_port = NULL;
+
+    dfd = opendir("/dev/serial/by-id");
+    if (dfd == NULL)
+        return;
+
+    while ((dp = readdir(dfd)) != NULL)
+    {
+
+        if (dp->d_type == DT_LNK)
+        {
+            if (strstr(dp->d_name, "FTDI"))
+            {
+
+                sprintf(full_path, "/dev/serial/by-id/%s", dp->d_name);
+
+                size_dev = readlink(full_path, buffer, 90);
+                if (size_dev != -1)
+                {
+                    buffer[size_dev] = '\0';
+
+                    ch = strstr(buffer, "ttyUSB");
+                    if (ch != NULL)
+                    {
+                        sscctt = (char *)malloc(20);
+                        sprintf(sscctt, "/dev/%s", ch);
+                        *usb_port = sscctt;
+                    }
+                }
+            }
+        }
+    }
+    closedir(dfd);
+
+    return;
+}
+
 size_t handle_aeronet_time_internally(unsigned char *buffer, size_t size, size_t nmemb, AERO_EXCHANGE *ptr)
 {
 
@@ -112,24 +156,22 @@ time_t receive_aeronet_time(AERO_EXCHANGE *ptr)
         printf("Aeronet time acquired : %sTime shift = %d seconds",
                ctime(&ptr->aeronet_time), ptr->seconds_shift);
 
-        if (abs(ptr->seconds_shift) < 3) 
+        if (abs(ptr->seconds_shift) < 3)
         {
             ptr->good_clock = 1;
-            printf (" System clock is good");
+            printf(" System clock is good");
         }
         else
         {
-            printf (" System clock will not be used to correct Cimel clock");
+            printf(" System clock will not be used to correct Cimel clock");
         }
-        
-
     }
     else
     {
         printf("Aeronet time cannot be acquired at the moment, may need to work offline");
     }
 
-       printf ("\n");
+    printf("\n");
 
     return ptr->aeronet_time;
 }
@@ -414,6 +456,8 @@ void init_port_receiption(MY_COM_PORT *mcport)
     mcport->header_flag = mcport->time_header_flag =
         mcport->empty_event_count = mcport->time_correction_flag =
             mcport->time_count = 0;
+
+    mcport->previous_time = 0;
 }
 
 void wait_for_new_packet(MY_COM_PORT *mcport)
@@ -590,7 +634,7 @@ int check_if_packet_completed(MY_COM_PORT *mcport, AERO_EXCHANGE *aerex)
 
     mcport->cimel_time = timegm(&mtim);
 
-    if (mcport->cimel_time <= mcport->last_time)
+    if ((mcport->cimel_time <= mcport->last_time) || ((mcport->previous_time != 0) && (mcport->cimel_time > mcport->previous_time)))
     {
         if (mcport->time_correction_flag)
         {
@@ -602,6 +646,7 @@ int check_if_packet_completed(MY_COM_PORT *mcport, AERO_EXCHANGE *aerex)
         return 4;
     }
 
+    mcport->previous_time = mcport->cimel_time;
     send_request_to_cimel(mcport, "jT", 2);
     return 6;
 }
@@ -686,7 +731,7 @@ perform timeout. if time_interval reached, then action - upload hourle and/or da
                 if (aerex->status && aerex->good_clock)
 
                 {
-                    
+
                     correct_time = time(NULL);
 
                     put_sys_time_to_buffer(&correct_time, k7_buffer->header.buffer + 156);
@@ -790,19 +835,29 @@ return :
 static size_t analyze_aeronet_response(void *data, size_t size, size_t nmemb, void *userp)
 {
 
-    size_t realsize = size * nmemb;
+    size_t realsize; 
+    UPLOAD_RESPONSE *result;
+    
+  
+    
+    realsize = size * nmemb;
+    result = (UPLOAD_RESPONSE *)userp;
 
-    UPLOAD_RESPONSE *result = (UPLOAD_RESPONSE *)userp;
+
+   
     result->text = (char *)malloc(realsize + 1);
 
     memcpy(result->text, data, realsize);
     result->text[realsize] = '\0';
     result->text_size = realsize;
+   
 
     if (strstr(result->text, "file provided has been queued for processing"))
         result->status = 1;
     else
         result->status = 0;
+
+  
 
     return result->text_size;
 }
@@ -819,6 +874,8 @@ int libcurl_upload_k7_buffer_to_https(K7_BUFFER *k7b)
     size_t buf_size;
     int i;
 
+ 
+
     if (!k7b->if_header)
         return 0;
 
@@ -826,6 +883,8 @@ int libcurl_upload_k7_buffer_to_https(K7_BUFFER *k7b)
 
     if (!curl)
         return 0;
+
+ 
 
     buf_size = k7b->header.record_size;
 
@@ -842,6 +901,7 @@ int libcurl_upload_k7_buffer_to_https(K7_BUFFER *k7b)
         memcpy(buf, k7b->records[i].buffer, k7b->records[i].record_size);
         buf += k7b->records[i].record_size;
     }
+  
 
     multipart = curl_mime_init(curl);
 
@@ -850,6 +910,8 @@ int libcurl_upload_k7_buffer_to_https(K7_BUFFER *k7b)
     curl_mime_data(part, k7b->file_name, CURL_ZERO_TERMINATED);
 
     part = curl_mime_addpart(multipart);
+
+  
 
     curl_mime_name(part, "uploaded_file");
     curl_mime_data(part, buffer, buf_size);
@@ -862,18 +924,22 @@ int libcurl_upload_k7_buffer_to_https(K7_BUFFER *k7b)
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, analyze_aeronet_response);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&k7b->up_res);
+   
 
     res = curl_easy_perform(curl);
+   
 
     curl_mime_free(multipart);
+   
 
     curl_easy_cleanup(curl);
+   
 
     free(buffer);
 
     if (res != CURLE_OK)
     {
-        printf("Code error = %d %sUpload unsuccesful\n", res);
+        printf("Code error = %d  Upload unsuccesful\n", res);
 
         return 0;
     }
@@ -956,7 +1022,7 @@ time_t read_k7_buffer_from_disk(char *dir_name, K7_BUFFER *ptr)
         return 0;
     }
 
-    if (bufff.st_size < 256)
+    if (bufff.st_size <= 256)
     {
         free(real_file_name);
         return 0;
@@ -1030,6 +1096,9 @@ time_t read_k7_buffer_from_disk(char *dir_name, K7_BUFFER *ptr)
     }
 
     free(buffer);
+
+    if (!ptr->num_records)
+        return 0;
 
     return ptr->records->record_time;
 }

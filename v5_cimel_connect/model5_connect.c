@@ -14,6 +14,7 @@
 #include <curl/curl.h>
 #include <fcntl.h>
 #include <errno.h>
+
 #include "model5_port.h"
 
 int main(int argc, char **argv)
@@ -26,16 +27,22 @@ int main(int argc, char **argv)
     char backup_dir[500], last_time_file[500], *homedir = getenv("HOME"), file_nameh[400], file_named[400], file_namem[400];
 
     int upload_switch_m, upload_switch_h, upload_switch_d, upload_switch;
+    char *usb_port, *usb_new;
 
     K7_BUFFER k7b, k7bm, k7bh, k7bd;
     struct tm mtim;
     time_t pc_time, new_time, last_time, stop_time;
 
-    if (argc < 2)
+    define_usb_com_port(&usb_port);
+
+    if (usb_port == NULL)
+    {
+        printf("No Serial - USB ports are detected\nProgram %s stop\n", argv[0]);
         exit(0);
+    }
 
     pc_time = time(NULL);
-    printf("%s starts. System clock %sWill activate modem\n", argv[0], ctime(&pc_time));
+    printf("%s starts on port %s. System clock %sWill activate modem\n", argv[0], usb_port, ctime(&pc_time));
 
     aerex.good_clock = 0;
 
@@ -54,13 +61,13 @@ int main(int argc, char **argv)
 
     sprintf(last_time_file, "%s/last_time.k7", homedir);
 
+    printf("file %s\n", last_time_file);
     sprintf(backup_dir, "%s/backup", homedir);
     mcport.time_interval = 900; // default : 15 minutes
 
-    mcport.if_open_port = 0;
-    sprintf(mcport.port_name, "/dev/tty%s", argv[1]);
-    if (argc > 2)
-        for (iarg = 2; iarg < argc; iarg++)
+    printf("argc = %d\n", argc);
+    if (argc > 1)
+        for (iarg = 1; iarg < argc; iarg++)
         {
             if (!strncmp(argv[iarg], "dir=", 4))
                 strcpy(backup_dir, argv[iarg] + 4);
@@ -70,6 +77,8 @@ int main(int argc, char **argv)
 
     gethostname(mcport.hostname, 39);
     mcport.hostname[39] = '\0';
+
+    printf("Now will read last_time.k7 file\n");
 
     strcpy(k7b.file_name, "last_time.k7");
 
@@ -115,7 +124,26 @@ int main(int argc, char **argv)
 
     mcport.packet_timeout = 15;
 
+    free(usb_port);
+    define_usb_com_port(&usb_port);
+    if (usb_port == NULL)
+    {
+        printf("No Serial - USB ports are detected\nProgram %s stop\n", argv[0]);
+        exit(0);
+    }
+    printf("Will try to open port %s\n", usb_port);
+    mcport.if_open_port = 0;
+    strcpy(mcport.port_name, usb_port);
+
     open_my_com_port(&mcport);
+    if (mcport.if_open_port)
+        printf("Port opened\n");
+    else
+    {
+        printf("Port cannot be opened. Stop the program\n");
+        exit(0);
+    }
+
     wait_for_new_packet(&mcport);
     init_port_receiption(&mcport);
 
@@ -134,6 +162,8 @@ int main(int argc, char **argv)
                 {
                     save_k7_buffer_on_disk(backup_dir, &k7bd);
                     pc_time = time(NULL);
+                    printf("Will close port on %s\n", usb_port);
+                    close_my_port(&mcport);
                     printf("Will upload existing file %s to aeronet, System clock %sWill activate modem\n", k7bd.file_name, ctime(&pc_time));
                     system("sudo hologram network connect");
                     stop_time = time(NULL);
@@ -153,6 +183,35 @@ int main(int argc, char **argv)
                     free_k7_buffer(&k7bh);
                     free_k7_buffer(&k7bd);
                     dev_init = 2;
+
+                    printf("Will try to reopen port %s\n", usb_port);
+                    define_usb_com_port(&usb_new);
+                    if (usb_new == NULL)
+                    {
+                        printf("Port unavilable. Stop the program\n");
+                        exit(0);
+                    }
+
+                    if (strcmp(usb_new, usb_port))
+                    {
+                        printf("usb port changed to %s\n", usb_new);
+                        free(usb_port);
+                        usb_port = usb_new;
+                        strcpy(mcport.port_name, usb_port);
+                    }
+                    else
+                        free(usb_new);
+                    open_my_com_port(&mcport);
+
+                    if (mcport.if_open_port)
+                        printf("Port %s reopened\n", usb_port);
+                    else
+                    {
+                        printf("Port %s cannot be opened. Stop the program\n", usb_port);
+                        exit(0);
+                    }
+                    wait_for_new_packet(&mcport);
+                    init_port_receiption(&mcport);
                 }
                 else
                     dev_init = 0;
@@ -229,9 +288,47 @@ int main(int argc, char **argv)
                     }
 
                     if (!upload_switch)
+                    {
+
                         printf("There is nothing new to upload\n");
+                        printf("Will close port on %s\n", usb_port);
+                        close_my_port(&mcport);
+
+                        printf("Will try to reopen port %s\n", usb_port);
+                        define_usb_com_port(&usb_new);
+                        if (usb_new == NULL)
+                        {
+                            printf("Port unavilable. Stop the program\n");
+                            exit(0);
+                        }
+                        if (strcmp(usb_new, usb_port))
+                        {
+                            printf("usb port changed to %s\n", usb_new);
+                            free(usb_port);
+                            usb_port = usb_new;
+                            strcpy(mcport.port_name, usb_port);
+                        }
+                        else
+                            free(usb_new);
+
+                        open_my_com_port(&mcport);
+
+                        if (mcport.if_open_port)
+                            printf("Port %s reopened\n", usb_port);
+                        else
+                        {
+                            printf("Port %s cannot be opened. Stop the program\n", usb_port);
+                            exit(0);
+                        }
+
+                        wait_for_new_packet(&mcport);
+                        init_port_receiption(&mcport);
+                    }
                     else
                     {
+
+                        printf("Will close port on %s\n", usb_port);
+                        close_my_port(&mcport);
                         pc_time = time(NULL);
                         printf("Will activate modem\n", ctime(&pc_time));
                         system("sudo hologram network connect");
@@ -262,6 +359,37 @@ int main(int argc, char **argv)
                         system("sudo hologram network disconnect");
                         stop_time = time(NULL);
                         printf("Modem disconnected after %d seconds\n", stop_time - pc_time);
+
+                        printf("Will try to reopen port %s\n", usb_port);
+                        define_usb_com_port(&usb_new);
+                        if (usb_new == NULL)
+                        {
+                            printf("Port unavilable. Stop the program\n");
+                            exit(0);
+                        }
+
+                        if (strcmp(usb_new, usb_port))
+                        {
+                            printf("usb port changed to %s\n", usb_new);
+                            free(usb_port);
+                            usb_port = usb_new;
+                            strcpy(mcport.port_name, usb_port);
+                        }
+                        else
+                            free(usb_new);
+
+                        open_my_com_port(&mcport);
+
+                        if (mcport.if_open_port)
+                            printf("Port %s reopened\n", usb_port);
+                        else
+                        {
+                            printf("Port %s cannot be opened. Stop the program\n", usb_port);
+                            exit(0);
+                        }
+
+                        wait_for_new_packet(&mcport);
+                        init_port_receiption(&mcport);
                     }
 
                     if (upload_switch_m)
