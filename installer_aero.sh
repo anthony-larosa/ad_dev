@@ -64,7 +64,7 @@ else
 fi
 
 echo "$user_var	ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
+echo "Adding cronjobs to user's crontab"
 cronjob1="@reboot sleep 180 && /home/$user_var/ad_dev/v5_cimel_connect/model5_connect USB0"
 cronjob2="@reboot sleep 220 && /home/$user_var/ad_dev/watch.sh"
 cronjob3="@reboot sleep 200 && /home/$user_var/ad_dev/modem_dog.sh"
@@ -73,7 +73,8 @@ cronjob3="@reboot sleep 200 && /home/$user_var/ad_dev/modem_dog.sh"
 { crontab -l -u $user_var; echo "$cronjob2"; } | crontab -u $user_var -
 { crontab -l -u $user_var; echo "$cronjob3"; } | crontab -u $user_var -
 
-
+echo "Building new directories..."
+sleep 3
 mkdir /home/$user_var/logs #Make a log file directory
 mkdir /home/$user_var/backup #For data files saved to disk
 cp -r $PWD /home/$user_var #Copy the programs from current user to new user
@@ -81,12 +82,13 @@ chown -R ${user_var}: /home/$user_var/
 chmod 777 /home/$user_var
 chmod 777 /home/$user_var/backup
 chmod 777 /home/$user_var/logs 
-chmod 777 /home/$user_var/ad_dev/v5_cimel_connect/model5_connect
+
 sleep 1
 
 cd /home/$user_var/ad_dev/v5_cimel_connect
 echo "Compiling cimel connect..."
 cc -o model5_connect model5_connect.c model5_port.c -lm -lcurl
+chmod 777 /home/$user_var/ad_dev/v5_cimel_connect/model5_connect
 chown ${user_var}: /home/$user_var/ad_dev/v5_cimel_connect/model5_connect
 
 sleep 2
